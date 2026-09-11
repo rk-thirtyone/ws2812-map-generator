@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LED Map Designer — map2D Generator</title>
+<style>
+  :root{
+    --bg: #0b0f0d;
+    --panel: #121815;
+    --line: #223028;
+    --amber: #ff8a1e;
+    --text: #e7ede9;
+    --muted: #7f9188;
+    --off: #1a2320;
+    --off-border: #26362f;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', ui-monospace, monospace;
+    padding: 18px 14px 40px;
+  }
+  h1{
+    font-size: 15px;
+    letter-spacing: .04em;
+    margin: 0 0 4px;
+    color: var(--amber);
+    font-weight: 700;
+  }
+  p.sub{
+    margin: 0 0 18px;
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .row{
+    display:flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 10px;
+  }
+  .row:last-child{ margin-bottom: 0; }
+  label{
+    display:block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  input[type=number]{
+    width: 72px;
+    background: var(--off);
+    border: 1px solid var(--off-border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 8px 8px;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  select{
+    background: var(--off);
+    border: 1px solid var(--off-border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 8px 8px;
+    font-family: inherit;
+    font-size: 12.5px;
+  }
+  .check{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size: 12px;
+    color: var(--muted);
+    padding-bottom: 8px;
+  }
+  .check input{ width:16px; height:16px; }
+  button{
+    font-family: inherit;
+    font-size: 12.5px;
+    border-radius: 6px;
+    padding: 9px 14px;
+    border: 1px solid var(--off-border);
+    background: var(--off);
+    color: var(--text);
+    cursor: pointer;
+  }
+  button.primary{
+    background: var(--amber);
+    border-color: var(--amber);
+    color: #16100a;
+    font-weight: 700;
+  }
+  button:active{ transform: translateY(1px); }
+  .gridwrap{
+    overflow-x: auto;
+    padding: 4px 0 8px;
+  }
+  #grid{
+    display: inline-grid;
+    gap: 3px;
+    background: #000;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+  }
+  .cell{
+    border-radius: 4px;
+    background: var(--off);
+    border: 1px solid var(--off-border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color: #4b5c53;
+    cursor: pointer;
+    user-select:none;
+  }
+  .cell.on{
+    background: #3a2a12;
+    color: #ffb066;
+    border-color: var(--amber);
+    font-weight: 700;
+  }
+  .cell:active{ opacity:.8; }
+  .stats{
+    display:flex;
+    gap: 18px;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 10px 2px 0;
+  }
+  .stats b{ color: var(--amber); }
+  textarea{
+    width: 100%;
+    min-height: 220px;
+    background: #050705;
+    color: #cfe8d8;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'Courier New', ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre;
+    resize: vertical;
+  }
+  .toolbar{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+    flex-wrap: wrap;
+    align-items:center;
+  }
+  .hint{
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  .copied{
+    color: var(--amber);
+    font-size: 11.5px;
+  }
+  input[type=range]{
+    width: 140px;
+  }
+</style>
+</head>
+<body>
+
+  <h1>LED MAP DESIGNER</h1>
+  <p class="sub">Klik kotak untuk menandai lokasi LED (tidak perlu urut). Penomoran index dibuat otomatis mengikuti pola zigzag/ular seperti pemasangan strip WS2812 asli — tinggal atur mode & titik mulainya biar cocok sama cara kamu solder.</p>
+
+  <div class="panel">
+    <div class="row">
+      <div>
+        <label>ROWS</label>
+        <input type="number" id="rowsInput" min="1" max="40" value="15">
+      </div>
+      <div>
+        <label>COLS</label>
+        <input type="number" id="colsInput" min="1" max="40" value="16">
+      </div>
+      <button class="primary" id="buildBtn">Buat Grid Baru</button>
+      <button id="resetBtn">Kosongkan</button>
+    </div>
+    <div class="row">
+      <div>
+        <label>Pola Zigzag</label>
+        <select id="modeSelect">
+          <option value="col">Per Kolom (atas-bawah, ular vertikal)</option>
+          <option value="row">Per Baris (kiri-kanan, ular horizontal)</option>
+        </select>
+      </div>
+      <div class="check"><input type="checkbox" id="startBottom" checked> Mulai dari bawah</div>
+      <div class="check"><input type="checkbox" id="startRight"> Mulai dari kanan</div>
+    </div>
+    <div class="hint">"Per Kolom" = LED nyambung turun/naik tiap kolom lalu pindah kolom sebelahnya (umum buat panel bentuk bebas/diamond). "Per Baris" = nyambung kiri-kanan tiap baris. Ubah checkbox kalau arah nomor 0 di preview belum sesuai fisik strip kamu.</div>
+  </div>
+
+  <div class="panel">
+    <div class="gridwrap">
+      <div id="grid"></div>
+    </div>
+    <div class="stats">
+      <div>LED terpasang: <b id="statCount">0</b></div>
+      <div>Ukuran: <b id="statSize">15 x 16</b></div>
+      <div style="display:flex; align-items:center; gap:6px;">Zoom <input type="range" id="zoomRange" min="14" max="48" value="26" style="width:100px;"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <label>Visualisasi (preview 1 efek: chase / kejar-kejaran)</label>
+    <div class="toolbar">
+      <button class="primary" id="playBtn">▶ Play</button>
+      <label style="margin:0 0 0 6px;">Speed</label>
+      <input type="range" id="speedRange" min="20" max="200" value="70">
+    </div>
+    <div class="hint">Efek ini cuma buat ngecek urutan nyala LED sesuai map2D yang kamu buat — bukan efek final di board.</div>
+  </div>
+
+  <div class="panel">
+    <label>Output (map2D)</label>
+    <textarea id="output" readonly></textarea>
+    <div class="toolbar">
+      <button class="primary" id="copyBtn">Copy ke Clipboard</button>
+      <span class="copied" id="copiedMsg"></span>
+    </div>
+  </div>
+
+<script>
+  let ROWS = 15, COLS = 16;
+  let cellSize = 26;
+  let active = [];       // active[r][c] = true/false
+  let grid = [];          // grid[r][c] = index or -1
+  let order = [];         // array of {r,c} in wiring order
+  let cellEls = [];       // DOM refs [r][c]
+  let animTimer = null;
+  let animPos = 0;
+
+  const rowsInput = document.getElementById('rowsInput');
+  const colsInput = document.getElementById('colsInput');
+  const modeSelect = document.getElementById('modeSelect');
+  const startBottom = document.getElementById('startBottom');
+  const startRight = document.getElementById('startRight');
+  const gridEl = document.getElementById('grid');
+  const output = document.getElementById('output');
+  const statCount = document.getElementById('statCount');
+  const statSize = document.getElementById('statSize');
+  const copiedMsg = document.getElementById('copiedMsg');
+  const playBtn = document.getElementById('playBtn');
+  const speedRange = document.getElementById('speedRange');
+  const zoomRange = document.getElementById('zoomRange');
+
+  function buildGrid(){
+    if(animTimer){ clearInterval(animTimer); animTimer = null; playBtn.textContent = '▶ Play'; }
+    ROWS = Math.max(1, Math.min(40, parseInt(rowsInput.value) || 1));
+    COLS = Math.max(1, Math.min(40, parseInt(colsInput.value) || 1));
+    rowsInput.value = ROWS;
+    colsInput.value = COLS;
+    active = Array.from({length: ROWS}, () => new Array(COLS).fill(false));
+    renderGridDOM();
+    recompute();
+  }
+
+  function computeOrder(){
+    const mode = modeSelect.value;
+    const sBottom = startBottom.checked;
+    const sRight = startRight.checked;
+    let result = [];
+    if(mode === 'col'){
+      let colIdx = [...Array(COLS).keys()];
+      if(sRight) colIdx.reverse();
+      colIdx.forEach((c, i) => {
+        let rowIdx = [...Array(ROWS).keys()];
+        let goUp = (i % 2 === 0) ? sBottom : !sBottom;
+        if(goUp) rowIdx.reverse();
+        rowIdx.forEach(r => { if(active[r][c]) result.push({r,c}); });
+      });
+    } else {
+      let rowIdx = [...Array(ROWS).keys()];
+      if(sBottom) rowIdx.reverse();
+      rowIdx.forEach((r, i) => {
+        let colIdx = [...Array(COLS).keys()];
+        let goLeft = (i % 2 === 0) ? sRight : !sRight;
+        if(goLeft) colIdx.reverse();
+        colIdx.forEach(c => { if(active[r][c]) result.push({r,c}); });
+      });
+    }
+    return result;
+  }
+
+  function recompute(){
+    order = computeOrder();
+    grid = Array.from({length: ROWS}, () => new Array(COLS).fill(-1));
+    order.forEach((pos, idx) => { grid[pos.r][pos.c] = idx; });
+    updateCellLabels();
+    renderOutput();
+    statCount.textContent = order.length;
+    statSize.textContent = ROWS + ' x ' + COLS;
+    copiedMsg.textContent = '';
+  }
+
+  function renderGridDOM(){
+    gridEl.innerHTML = '';
+    cellSize = parseInt(zoomRange.value) || 26;
+    gridEl.style.gridTemplateColumns = 'repeat(' + COLS + ', ' + cellSize + 'px)';
+    gridEl.style.gridTemplateRows = 'repeat(' + ROWS + ', ' + cellSize + 'px)';
+    const fontSize = Math.max(8, Math.round(cellSize * 0.36));
+    cellEls = Array.from({length: ROWS}, () => new Array(COLS));
+    for(let r=0; r<ROWS; r++){
+      for(let c=0; c<COLS; c++){
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.style.width = cellSize + 'px';
+        cell.style.height = cellSize + 'px';
+        cell.style.fontSize = fontSize + 'px';
+        cell.addEventListener('click', () => {
+          active[r][c] = !active[r][c];
+          recompute();
+        });
+        gridEl.appendChild(cell);
+        cellEls[r][c] = cell;
+      }
+    }
+  }
+
+  function applyZoom(){
+    cellSize = parseInt(zoomRange.value) || 26;
+    gridEl.style.gridTemplateColumns = 'repeat(' + COLS + ', ' + cellSize + 'px)';
+    gridEl.style.gridTemplateRows = 'repeat(' + ROWS + ', ' + cellSize + 'px)';
+    const fontSize = Math.max(8, Math.round(cellSize * 0.36));
+    for(let r=0; r<ROWS; r++){
+      for(let c=0; c<COLS; c++){
+        const el = cellEls[r][c];
+        if(!el) continue;
+        el.style.width = cellSize + 'px';
+        el.style.height = cellSize + 'px';
+        el.style.fontSize = fontSize + 'px';
+      }
+    }
+  }
+  zoomRange.addEventListener('input', applyZoom);
+
+  function updateCellLabels(){
+    if(!cellEls.length || !cellEls[0] || cellEls[0].length !== COLS) return;
+    for(let r=0; r<ROWS; r++){
+      for(let c=0; c<COLS; c++){
+        const el = cellEls[r][c];
+        const val = grid[r][c];
+        el.style.background = '';
+        if(val >= 0){
+          el.classList.add('on');
+          el.textContent = val;
+        } else {
+          el.classList.remove('on');
+          el.textContent = '';
+        }
+      }
+    }
+  }
+
+  function renderOutput(){
+    const numLeds = order.length;
+    let lines = [];
+    lines.push('#define NUM_LEDS ' + numLeds);
+    lines.push('');
+    lines.push('#define ROWS ' + ROWS);
+    lines.push('#define COLS ' + COLS);
+    lines.push('');
+    lines.push('static const int16_t map2D[ROWS][COLS] = {');
+    for(let r=0; r<ROWS; r++){
+      const rowStr = grid[r].join(',');
+      const comma = (r < ROWS-1) ? ',' : '';
+      lines.push('  { ' + rowStr + ' }' + comma);
+    }
+    lines.push('};');
+    output.value = lines.join('\n');
+  }
+
+  function stopAnim(){
+    if(animTimer){ clearInterval(animTimer); animTimer = null; }
+    playBtn.textContent = '▶ Play';
+    updateCellLabels();
+  }
+
+  function startAnim(){
+    if(order.length === 0) return;
+    animPos = 0;
+    playBtn.textContent = '■ Stop';
+    const tail = Math.max(4, Math.round(order.length / 8));
+    animTimer = setInterval(() => {
+      for(let r=0; r<ROWS; r++){
+        for(let c=0; c<COLS; c++){
+          const el = cellEls[r][c];
+          if(grid[r][c] < 0) continue;
+          let d = (animPos - grid[r][c] + order.length) % order.length;
+          if(d < tail){
+            const alpha = 1 - (d / tail);
+            el.style.background = 'rgba(255,138,30,' + (0.15 + 0.85*alpha) + ')';
+          } else {
+            el.style.background = '#1a2320';
+          }
+        }
+      }
+      animPos = (animPos + 1) % order.length;
+    }, parseInt(speedRange.value));
+  }
+
+  document.getElementById('buildBtn').addEventListener('click', buildGrid);
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    active = Array.from({length: ROWS}, () => new Array(COLS).fill(false));
+    recompute();
+  });
+  modeSelect.addEventListener('change', recompute);
+  startBottom.addEventListener('change', recompute);
+  startRight.addEventListener('change', recompute);
+
+  playBtn.addEventListener('click', () => {
+    if(animTimer) stopAnim(); else startAnim();
+  });
+  speedRange.addEventListener('change', () => {
+    if(animTimer){ stopAnim_keepPlaying(); }
+  });
+  function stopAnim_keepPlaying(){
+    clearInterval(animTimer);
+    animTimer = null;
+    startAnim();
+  }
+
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    output.select();
+    navigator.clipboard.writeText(output.value).then(() => {
+      copiedMsg.textContent = 'Tersalin!';
+      setTimeout(() => copiedMsg.textContent = '', 1800);
+    }).catch(() => {
+      document.execCommand('copy');
+      copiedMsg.textContent = 'Tersalin!';
+      setTimeout(() => copiedMsg.textContent = '', 1800);
+    });
+  });
+
+  buildGrid();
+</script>
+
+</body>
+</html>

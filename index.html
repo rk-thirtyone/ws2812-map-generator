@@ -6,28 +6,29 @@
 <title>LED Map Designer — map2D Generator</title>
 <style>
   :root{
-    --bg: #0b0f0d;
-    --panel: #121815;
-    --line: #223028;
-    --amber: #ff8a1e;
-    --text: #e7ede9;
-    --muted: #7f9188;
-    --off: #1a2320;
-    --off-border: #26362f;
+    --bg: #f7f3ea;
+    --panel: #ffffff;
+    --line: #e4ddcd;
+    --amber: #21d19f;
+    --amber-dark: #189a76;
+    --text: #1e3a5f;
+    --muted: #5c6b7a;
+    --off: #f1ede2;
+    --off-border: #ddd5c2;
   }
   *{ box-sizing: border-box; }
   body{
     margin:0;
     background: var(--bg);
     color: var(--text);
-    font-family: 'Courier New', ui-monospace, monospace;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Courier New', ui-monospace, monospace;
     padding: 18px 14px 40px;
   }
   h1{
     font-size: 15px;
     letter-spacing: .04em;
     margin: 0 0 4px;
-    color: var(--amber);
+    color: var(--text);
     font-weight: 700;
   }
   p.sub{
@@ -42,6 +43,7 @@
     border-radius: 10px;
     padding: 14px;
     margin-bottom: 14px;
+    box-shadow: 0 4px 14px rgba(30,58,95,0.05);
   }
   .row{
     display:flex;
@@ -84,7 +86,7 @@
     color: var(--muted);
     padding-bottom: 8px;
   }
-  .check input{ width:16px; height:16px; }
+  .check input{ width:16px; height:16px; accent-color: var(--amber); }
   button{
     font-family: inherit;
     font-size: 12.5px;
@@ -98,7 +100,7 @@
   button.primary{
     background: var(--amber);
     border-color: var(--amber);
-    color: #16100a;
+    color: #ffffff;
     font-weight: 700;
   }
   button:active{ transform: translateY(1px); }
@@ -109,26 +111,26 @@
   #grid{
     display: inline-grid;
     gap: 3px;
-    background: #000;
+    background: var(--off);
     padding: 8px;
     border-radius: 8px;
     border: 1px solid var(--line);
   }
   .cell{
     border-radius: 4px;
-    background: var(--off);
+    background: #ffffff;
     border: 1px solid var(--off-border);
     display:flex;
     align-items:center;
     justify-content:center;
-    color: #4b5c53;
+    color: #b9c2ce;
     cursor: pointer;
     user-select:none;
   }
   .cell.on{
-    background: #3a2a12;
-    color: #ffb066;
-    border-color: var(--amber);
+    background: var(--amber);
+    color: #ffffff;
+    border-color: var(--amber-dark);
     font-weight: 700;
   }
   .cell:active{ opacity:.8; }
@@ -139,12 +141,12 @@
     color: var(--muted);
     margin: 10px 2px 0;
   }
-  .stats b{ color: var(--amber); }
+  .stats b{ color: var(--amber-dark); }
   textarea{
     width: 100%;
     min-height: 220px;
-    background: #050705;
-    color: #cfe8d8;
+    background: var(--off);
+    color: var(--text);
     border: 1px solid var(--line);
     border-radius: 8px;
     padding: 12px;
@@ -168,11 +170,12 @@
     line-height: 1.5;
   }
   .copied{
-    color: var(--amber);
+    color: var(--amber-dark);
     font-size: 11.5px;
   }
   input[type=range]{
     width: 140px;
+    accent-color: var(--amber);
   }
 </style>
 </head>
@@ -407,9 +410,9 @@
           let d = (animPos - grid[r][c] + order.length) % order.length;
           if(d < tail){
             const alpha = 1 - (d / tail);
-            el.style.background = 'rgba(255,138,30,' + (0.15 + 0.85*alpha) + ')';
+            el.style.background = 'rgba(33,209,159,' + (0.25 + 0.75*alpha) + ')';
           } else {
-            el.style.background = '#1a2320';
+            el.style.background = '#ffffff';
           }
         }
       }

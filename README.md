@@ -2,7 +2,7 @@
 
 Tool interaktif buat desain layout custom LED matrix (WS2812 / NeoPixel) langsung dari browser. Klik buat nandain bentuk panel, penomoran index dibuat otomatis mengikuti pola zigzag/ular sesuai wiring fisik strip LED — hasilnya langsung jadi array `map2D` yang siap paste ke kode Arduino.
 
-🔗 **Demo:** https://rk-thirtyone.github.io/led-map-designer/
+🔗 **Demo:** [https://rk-thirtyone.github.io/led-map-designer/](https://github.com/rk-thirtyone/ws2812-map-generator)
 
 ## Fitur
 
